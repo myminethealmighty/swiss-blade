@@ -1,0 +1,33 @@
+{
+  "name": "swiss-blade",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Open-source Swiss Blade Chrome extension for ad blocking, screenshots, and site storage inspection.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run build:extension-scripts && next build && node scripts/externalize-inline-scripts.mjs",
+    "build:extension-scripts": "esbuild extension/background.ts extension/content.ts extension/popup.ts --bundle --format=iife --target=chrome114 --outdir=public",
+    "lint": "eslint src extension --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "package:chrome": "npm run build && cd out && zip -r -FS ../swiss-blade-chrome.zip . -x \"*.DS_Store\" -x \"__MACOSX*\""
+  },
+  "dependencies": {
+    "@types/chrome": "^0.0.268",
+    "esbuild": "^0.28.1",
+    "next": "^16.2.9",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^5.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.2.9"
+  },
+  "overrides": {
+    "postcss": "^8.5.10"
+  },
+  "license": "MIT"
+}

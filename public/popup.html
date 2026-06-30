@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Swiss Blade</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <section class="hero-panel">
+        <div>
+          <p class="eyebrow">Swiss Blade</p>
+          <h1 id="protectionLabel">Loading</h1>
+        </div>
+        <button aria-label="Toggle ad blocking" class="power-button" id="toggleProtection" type="button">
+          <span id="powerIcon">ON</span>
+        </button>
+      </section>
+
+      <section class="stats-grid">
+        <div class="metric">
+          <span>Blocked today</span>
+          <strong id="blockedToday">0</strong>
+        </div>
+        <div class="metric">
+          <span>Allowlisted</span>
+          <strong id="allowlisted">0</strong>
+        </div>
+      </section>
+
+      <section class="tool-section">
+        <p class="section-title">Tools</p>
+        <div class="actions three-actions">
+          <button class="secondary-button" id="cropShot" type="button">Screenshot</button>
+          <button class="secondary-button" id="inspectStorage" type="button">Inspect</button>
+          <button class="secondary-button danger-button" id="clearStorage" type="button">Clear All</button>
+        </div>
+      </section>
+
+      <section class="storage-panel" hidden id="storagePanel">
+        <div class="storage-summary" id="storageSummary"></div>
+        <div class="storage-details" hidden id="storageDetails"></div>
+      </section>
+
+      <section class="status-row">
+        <span class="status-dot on" id="statusDot"></span>
+        <p id="statusText">Ready</p>
+      </section>
+
+      <div class="actions">
+        <button class="secondary-button" id="openOptions" type="button">Options</button>
+        <button class="secondary-button" id="resetStats" type="button">Reset</button>
+      </div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+public/background.js
+public/content.js
+tsconfig.tsbuildinfo
+.DS_Store
+*.log
+
+PROJECT_SUMMARY.md
+public/popup.js
