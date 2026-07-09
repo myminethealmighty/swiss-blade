@@ -4,7 +4,7 @@ All notable changes to this project will be documented here.
 
 This project does not follow a formal release cycle yet.
 
-## Unreleased
+## v0.1.0 - 2026-07-09
 
 - Migrated extension popups to native `popup.html`, `popup.css`, and `popup.ts` to solve flickering pre-hydration UI issues with Next.js in extension views.
 - Implemented static network request blocking using Manifest V3 `declarativeNetRequest` rules inside `public/rules/ads.json`.
