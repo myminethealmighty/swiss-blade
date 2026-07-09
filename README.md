@@ -1,21 +1,70 @@
 # Swiss Blade
 
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![Node.js](https://img.shields.io/badge/Node.js-20%2B-green)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=myminethealmighty.swiss-blade)
+
 Swiss Blade is an open-source Chrome extension built with TypeScript, Next.js, and Manifest V3. It blocks common ad and tracker network requests, hides common ad containers on pages, captures visible-tab screenshots, and inspects or clears site storage from the popup.
 
 This project is a practical privacy and utility extension. It is not a full EasyList-compatible engine yet, but the rule file and cosmetic selectors are organized so the blocker can grow safely over time.
 
-## Features
+## Project Status
 
-- Manifest V3 request blocking with `declarativeNetRequest` static rules.
-- Cosmetic page cleanup for common ad containers and sponsored blocks.
-- On/off switch with badge count hidden while blocking is off.
-- Visible-tab screenshot download named `swiss-blade.png` with Chrome duplicate numbering.
-- Cookie, LocalStorage, SessionStorage, IndexedDB, and Cache Storage inspection.
-- Clear buttons for each storage type and a Clear All action.
-- Options page for allowlisting domains.
-- Chrome-safe static export for loading from the generated `out` folder.
+Swiss Blade is actively evolving. The current version supports client-side Manifest V3 static rule interception, content-script cosmetic element hiding, cookie and storage inspection, and allowlisted domain options. All processes occur purely in the local browser context to protect user privacy.
 
-## Install for development
+## What It Does
+
+- Blocks known ad-serving and tracking network requests using MV3 static rules.
+- Hides common empty ad containers, sponsored blocks, and Google ad frames with a content script.
+- Captures visible-tab screenshots named `swiss-blade.png` using Chrome's native downloads API with duplicate numbering.
+- Inspects website storage (Cookies, LocalStorage, SessionStorage, IndexedDB, and Cache Storage).
+- Supports selective storage clearing per type and a global "Clear All" action.
+- Allows user-defined domains to bypass ad-blocking through an Options page allowlist.
+- Runs entirely locally without sending user screenshots, storage data, or settings to any external server.
+- Uses a post-build compiler check to ensure compliance with the Chrome Web Store Content Security Policy (CSP).
+
+## Architecture
+
+```text
+public/
+  rules/         declarativeNetRequest rule configurations (ads.json)
+  icons/         Branded extension icons (16px, 32px, 48px, 128px)
+  popup.html     Native Chrome extension popup shell
+  popup.css      Native Chrome extension popup styling
+
+extension/
+  background.ts  Service worker for dynamic allowlists, screenshots, and cookies
+  content.ts     Content script for cosmetic hiding and DOM storage queries
+  popup.ts       Popup event controller and inspector UI renderer
+
+src/
+  app/
+    options/     Next.js allowlist settings UI
+    globals.css   Next.js dashboard styles
+```
+
+## Runtime Flow
+
+1. **Popup Load**: The user clicks the extension icon, launching `popup.html`. `popup.ts` checks protection state and queries storage counts.
+2. **Layer 1 Network Block**: Chrome intercepts network requests from the static list in `public/rules/ads.json` if protection is enabled.
+3. **Layer 2 Cosmetic Block**: The content script `content.ts` injects display rules and runs a `MutationObserver` to hide ad boxes.
+4. **Inspect Storage**: Tapping **Inspect** checks cookies from the service worker, and DOM storage databases from the content script.
+5. **Dynamic Allowlist**: The options page stores domains in Chrome storage, which the service worker maps to active bypass rules.
+
+## Supported Storage Types
+
+| Storage Type    | Scope                  | Inspection Method              | Clearing Method                |
+| --------------- | ---------------------- | ------------------------------ | ------------------------------ |
+| **Cookies**     | Domain / Domain Wild   | `chrome.cookies.getAll` (BG)   | `chrome.cookies.remove` (BG)   |
+| **Local**       | Origin                 | `localStorage.length` (CS)     | `localStorage.clear()` (CS)    |
+| **Session**     | Origin / Tab Session   | `sessionStorage.length` (CS)   | `sessionStorage.clear()` (CS)   |
+| **IndexedDB**   | Origin Databases       | `indexedDB.databases()` (CS)   | `indexedDB.deleteDatabase` (CS)|
+| **Cache**       | Service Worker Caches  | `caches.keys()` (CS)           | `caches.delete(name)` (CS)     |
+
+*(BG = Background Service Worker, CS = Content Script)*
+
+## Install for Development
 
 ```bash
 npm install
@@ -25,12 +74,10 @@ npm run build
 Then load the extension in Chrome:
 
 1. Open `chrome://extensions`.
-2. Enable Developer mode.
+2. Enable **Developer mode** in the top right.
 3. Click **Load unpacked**.
-4. Select the generated `out` folder from this project.
-5. After every code or rule change, run `npm run build` again and click the reload button on the extension card.
-
-Chrome loads the built extension, not the TypeScript source. That is why the `out` folder matters.
+4. Select the generated `out` folder from this project root.
+5. After changing source files, run `npm run build` again and reload the extension in Chrome.
 
 ## Package for Chrome Web Store
 
@@ -38,17 +85,14 @@ Chrome loads the built extension, not the TypeScript source. That is why the `ou
 npm run package:chrome
 ```
 
-This creates `swiss-blade-chrome.zip` from the contents of `out`. Upload that ZIP in the Chrome Web Store Developer Dashboard.
+This creates `swiss-blade-chrome.zip` from the contents of the `out` directory. Upload this ZIP directly to the Chrome Web Store Developer Dashboard.
 
 Before publishing:
+- Check `public/manifest.json` for name, description, version, and requested permissions.
+- Ensure the version is incremented for web store upgrades.
+- Ensure `manifest.json` is at the root of the ZIP file.
 
-- Check `public/manifest.json` for the final name, description, version, icons, permissions, and host permissions.
-- Build and test the extension locally from `out`.
-- Increment `version` in `public/manifest.json` for every Web Store update.
-- Keep `manifest.json` at the root of the ZIP. The package script does this by zipping the contents of `out`, not the `out` directory itself.
-- Prepare store listing images, a short description, a detailed description, privacy practices, and review notes explaining the storage inspector and all-sites blocking permissions.
-
-## How blocking works
+## How Blocking Works
 
 Swiss Blade uses two layers.
 
@@ -56,60 +100,39 @@ The first layer is network blocking in `public/rules/ads.json`. Chrome reads thi
 
 The second layer is cosmetic filtering in `extension/content.ts`. Some ads leave empty boxes or are inserted after the page loads. The content script hides common ad containers, sponsored blocks, Google ad iframes, and similar page elements.
 
-The popup count can increase when either layer blocks or hides something. Some ads may still appear because real ad blockers use very large maintained lists and site-specific filters. Swiss Blade now has a larger starter ruleset, but long-term quality needs a filter-list compiler and update pipeline.
+The popup count increases when either layer blocks or hides something.
 
-## Screenshot behavior
+## Screenshot Behavior
 
 Click **Shot** in the popup to capture the visible part of the active tab. Chrome opens a save dialog and suggests `swiss-blade.png`. If the file already exists, Chrome's `uniquify` behavior creates names such as `swiss-blade (1).png`.
 
-Area crop selection was removed from the main flow because Chrome closes extension popups when focus moves back to the page, which made drag selection unreliable. Visible-tab capture is simpler and stable.
+Area crop selection was removed from the main flow because Chrome closes extension popups when focus moves back to the page. Visible-tab capture is simpler and stable.
 
-## Storage inspector
+## Storage Inspector
 
-Click **Inspect** to count storage for the current site:
-
-- Cookies
-- LocalStorage
-- SessionStorage
-- IndexedDB
-- Cache Storage
-
-Click a count row to expand that row and see its details. Click the row's **Clear** button to clear only that storage type. Click **Clear All** to remove all supported storage types for the active site.
+Click **Inspect** to count storage for the current site. Click a count row to expand it and see details (such as keys and values). Click the row's **Clear** button to clear only that storage type. Click **Clear All** to remove all supported storage types for the active site.
 
 Cookies are cleared by the background service worker with the Chrome cookies API. LocalStorage, SessionStorage, IndexedDB, and Cache Storage are cleared by the content script running inside the active tab.
 
-## Project layout
+## Options Page
 
-- `public/manifest.json` - Chrome extension manifest.
-- `public/rules/ads.json` - Manifest V3 static blocking rules.
-- `public/popup.html` and `public/popup.css` - native extension popup shell.
-- `extension/popup.ts` - popup behavior.
-- `extension/background.ts` - service worker for blocking state, badge count, screenshots, cookies, and messaging.
-- `extension/content.ts` - cosmetic filtering and page storage access.
-- `src/app/options/page.tsx` - allowlist options page.
-- `scripts/externalize-inline-scripts.mjs` - post-build step that makes the Next.js export safe for Chrome extensions.
+The options page is built using Next.js (`src/app/options/page.tsx`). It manages the domain allowlist. Allowlisted domains are stored in Chrome extension local storage. The background worker watches allowlist changes and dynamically updates rules to permit requests on trusted domains.
 
-## Why the post-build script exists
+## Open Source
 
-Next.js creates web-app files such as `_next` assets and helper text files. Chrome extensions reject unpacked folders that contain Chrome-reserved names starting with `_`, and inline scripts are not allowed by the extension content security policy. The post-build script rewrites those generated files into Chrome-safe names and external script files inside `out`.
+- [MIT License](LICENSE)
+- [Contributing Guide](CONTRIBUTING.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Security Policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
-You do not need to run the Node patch commands manually. For normal development, use:
+## Useful Commands
 
 ```bash
-npm run build
+npm run dev                    # Start Next.js development server
+npm run build                  # Compile extension and build static pages
+npm run typecheck              # Check TypeScript errors
+npm run lint                   # Run ESLint validation checks
+npm run build:extension-scripts # Package popup/content/background scripts with esbuild
+npm run package:chrome         # Package the built output into a ZIP for release
 ```
-
-For Web Store packaging, use:
-
-```bash
-npm run package:chrome
-```
-
-## Contributing
-
-Issues and pull requests are welcome. Good next steps are stronger filter coverage, a real ABP/EasyList compiler, per-site rule controls, and automated extension tests.
-
-## License
-
-MIT
-# swiss-blade
