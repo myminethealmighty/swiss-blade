@@ -24,7 +24,8 @@
     "activeTab",
     "cookies",
     "downloads",
-    "scripting"
+    "scripting",
+    "webRequest"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -2,9 +2,14 @@
 
 ## Purpose
 
-Swiss Blade is an open-source Chrome extension built with TypeScript, Next.js, and Manifest V3. It combines several utilities in one extension: blocking common ad and tracker network requests, cosmetic page cleanup of ad elements, visible-tab screenshot capture, site storage inspection, and domain allowlist options.
+Swiss Blade is an open-source Chrome extension built with TypeScript, Next.js, and Manifest V3. It combines several utilities in one extension:
 
-It is designed to run locally in the user's browser, prioritizing privacy by processing and storing all configuration, block rules, and captured screenshots on the user's local machine.
+- **Ad blocking** (network + cosmetic) with category breakdown visibility
+- **Video detection & download** (auto-detect playing videos, HLS stream download, floating download button)
+- **Screenshot tools** (visible viewport, drag-to-crop area, full-page scroll-and-stitch)
+- **Site storage inspection** (Cookies, LocalStorage, SessionStorage, IndexedDB, Cache Storage)
+
+Everything runs locally in the browser — no data is ever sent to external servers.
 
 ## Layout
 
@@ -16,8 +21,8 @@ public/
   popup.css      Popup style sheets and theme configurations
 
 extension/
-  background.ts  Background service worker (ad rules, screenshots, cookie API)
-  content.ts     Content script (cosmetic ad hiding, DOM storage API access)
+  background.ts  Background service worker (ad rules, video detection, screenshots, HLS download, cookie APIs)
+  content.ts     Content script (cosmetic ad hiding, DOM storage access, video element tracking, floating download button, page script injection)
   popup.ts       Popup control logic, UI rendering, event dispatchers
 
 src/
@@ -32,42 +37,52 @@ scripts/
 ## Runtime Flow
 
 1. **Initialization**:
-   - The user opens Chrome and clicks the Swiss Blade icon, which opens the native `popup.html`.
-   - `extension/popup.ts` checks the current activation state (ON/OFF) and requests storage statistics from the background worker.
+   - User clicks the extension icon → opens `popup.html`.
+   - `extension/popup.ts` reads protection state, ad-block stats, and starts auto-refresh of video detection (2-second interval).
 
-2. **Network Blocking (Layer 1)**:
-   - When enabled (ON), the service worker (`extension/background.ts`) updates declarative rulesets via `chrome.declarativeNetRequest`.
-   - Chrome intercepts matching ad and tracker requests defined in `public/rules/ads.json` before they are sent.
+2. **Ad Blocking (Layer 1 — Network)**:
+   - When enabled, the service worker updates declarative rulesets via `chrome.declarativeNetRequest`.
+   - Chrome intercepts matching ad/tracker requests defined in `public/rules/ads.json`.
+   - `extension/background.ts` manages dynamic allowlist rules for user-trusted domains.
 
-3. **Cosmetic Filtering (Layer 2)**:
-   - The content script (`extension/content.ts`) runs on page load.
-   - It injects styles to hide common ad and sponsored elements.
-   - A `MutationObserver` watches for dynamically loaded elements to ensure newly added ad slots are hidden automatically.
-   - The content script reports hidden count increments to `background.ts`, updating the extension's badge count.
+3. **Ad Blocking (Layer 2 — Cosmetic)**:
+   - `extension/content.ts` injects CSS to hide ad elements on all pages.
+   - A `MutationObserver` watches for dynamically loaded ad elements.
+   - Each hidden element is categorized (Banner, Google, Iframe, Sponsored, Native).
+   - Category counts are reported to the background and displayed as badges in the popup.
 
-4. **Tab Storage Inspection**:
-   - Tapping **Inspect** in the popup triggers a query:
-     - Cookies are fetched by `background.ts` using `chrome.cookies.getAll`.
-     - `LocalStorage`, `SessionStorage`, `IndexedDB`, and `Cache Storage` counts are queried by `content.ts` in the page context.
-   - The user can expand each count row to view item keys and values, or clear them selectively.
+4. **Video Detection & Download**:
+   - **Network level**: `chrome.webRequest.onHeadersReceived` monitors all responses for video content-types and URL patterns. Byte-range (206) responses are skipped to avoid torrent chunk noise.
+   - **Page level**: Page script is injected into the page's main world via `chrome.scripting.executeScript({ world: "MAIN" })` (bypasses CSP). It patches `fetch`, `XMLHttpRequest`, and `MediaSource.addSourceBuffer` to detect video streams.
+   - **Element level**: Content script watches all `<video>` elements for play events and reports their sources.
+   - **Floating button**: A fixed-position "Download" button appears at bottom-right when a playing video is detected. Clicking it triggers a download.
+   - **HLS support**: If the detected URL is an `.m3u8` manifest, the background downloads, parses, fetches all segments (parallel batches of 6), and concatenates them into a single `.ts` file.
 
-5. **Screenshot Generation**:
-   - Clicking **Screenshot** in the popup sends a message to `background.ts`.
-   - The service worker calls `chrome.tabs.captureVisibleTab` and prompts the user to download the image as `swiss-blade.png` using `chrome.downloads.download`.
+5. **Screenshots**:
+   - One **Screenshot** button with a dropdown menu: **Visible**, **Crop Area**, **Full Page**.
+   - **Visible**: Captures the current viewport via `chrome.tabs.captureVisibleTab`.
+   - **Crop Area**: Background captures the tab, content script shows a drag-to-select overlay, user selects a region, background crops the image and saves it.
+   - **Full Page**: Background scrolls through the entire page via injected scroll scripts, captures each viewport, and stitches them together using OffscreenCanvas. Falls back to visible capture if scrolling fails.
+
+6. **Storage Inspection**:
+   - Clicking **Inspect** toggles the storage panel open/closed.
+   - Cookies fetched by `background.ts` via `chrome.cookies.getAll`.
+   - DOM storage counts queried by `content.ts`.
+   - Each storage type can be expanded to view items, or cleared individually.
+   - **Clear All** button inside the storage panel header wipes everything and refreshes the view.
 
 ## Key Files
 
-- [public/manifest.json](file:///Users/minkhant/Desktop/MKT/swiss-blade/public/manifest.json) - Extension entry configuration defining permissions, scripts, and static rules.
-- [public/rules/ads.json](file:///Users/minkhant/Desktop/MKT/swiss-blade/public/rules/ads.json) - Ad/tracker network blocklist database.
-- [extension/background.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/background.ts) - Service worker manager handling cookies, tabs, dynamic rules, and screenshots.
-- [extension/content.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/content.ts) - DOM content worker executing storage analysis and cosmetic filters.
-- [extension/popup.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/popup.ts) - Popup controller managing inspector rendering and user actions.
-- [src/app/options/page.tsx](file:///Users/minkhant/Desktop/MKT/swiss-blade/src/app/options/page.tsx) - Options app managing user allowlisted domains.
-- [scripts/externalize-inline-scripts.mjs](file:///Users/minkhant/Desktop/MKT/swiss-blade/scripts/externalize-inline-scripts.mjs) - Next.js build output adapter complying with CSP policies.
+- [public/manifest.json](file:///Users/minkhant/Desktop/MKT/swiss-blade/public/manifest.json) — Extension entry configuration (permissions, scripts, rulesets).
+- [public/rules/ads.json](file:///Users/minkhant/Desktop/MKT/swiss-blade/public/rules/ads.json) — Ad/tracker network blocklist.
+- [extension/background.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/background.ts) — Service worker: ad rules, video webRequest detection, screenshot capture/stitch/crop, HLS download, cookie/storage APIs.
+- [extension/content.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/content.ts) — Content script: cosmetic ad hiding with categories, DOM storage, video element tracking, floating download button, page script injection coordinator, screenshot crop overlay.
+- [extension/popup.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/popup.ts) — Popup controller: ad stats, storage inspector, video list, screenshot dropdown, event handling.
+- [src/app/options/page.tsx](file:///Users/minkhant/Desktop/MKT/swiss-blade/src/app/options/page.tsx) — Options app for managing allowlisted domains.
 
 ## Extension Setup
 
-Chrome does not load the source files directly. It loads the built static assets from:
+Chrome loads the built static assets from:
 ```text
 /Users/minkhant/Desktop/MKT/swiss-blade/out
 ```
@@ -76,48 +91,25 @@ Chrome does not load the source files directly. It loads the built static assets
 1. Open `chrome://extensions`.
 2. Enable **Developer mode** toggle.
 3. Click **Load unpacked**.
-4. Select the generated `/Users/minkhant/Desktop/MKT/swiss-blade/out` folder.
+4. Select the `/Users/minkhant/Desktop/MKT/swiss-blade/out` folder.
 
-When editing code, you must re-run the build script (`npm run build`) and hit the reload icon on the Swiss Blade card in `chrome://extensions`.
+When editing code, re-run `npm run build` and reload the extension on the Chrome extensions page.
 
-## Why Next.js and Native Popup Coexist
+## Build Commands
 
-Next.js provides a convenient dashboard structure, which Swiss Blade uses for the allowlist options page. However, running a Next.js client directly inside a Chrome extension popup causes a flickering UI because Chrome serves static pre-hydrated HTML snapshots before scripts run.
-
-To solve this, the active extension popup uses standard, fast native pages (`popup.html` / `popup.css` / `popup.ts`), while options settings remain inside the Next.js options page.
-
-## Local Start & Build Commands
-
-Install dependencies:
 ```bash
-npm install
+npm install                     # Install dependencies
+npm run dev                     # Start Next.js dev server (for options page testing)
+npm run typecheck               # Check TypeScript errors
+npm run lint                    # Run ESLint checks
+npm run build                   # Compile extension + build Next.js pages + externalizer
+npm run package:chrome          # Compress out/ into swiss-blade-chrome.zip
 ```
 
-Start the Next.js development server (for options page testing):
-```bash
-npm run dev
-```
+## Key Design Decisions
 
-Check TypeScript errors:
-```bash
-npm run typecheck
-```
-
-Run ESLint checks:
-```bash
-npm run lint
-```
-
-Build the extension output (`out/` folder):
-```bash
-npm run build
-```
-
-This compiles extension background scripts using `esbuild`, builds Next.js pages, and executes the externalizer post-build script.
-
-Package extension for publication:
-```bash
-npm run package:chrome
-```
-
-This compresses the `out/` content into `swiss-blade-chrome.zip` for direct upload to the Chrome Web Store Developer Console.
+- **Page script injection**: Uses `chrome.scripting.executeScript({ world: "MAIN" })` via background instead of DOM `<script>` injection to bypass Content Security Policy restrictions.
+- **Safe message wrapper**: All `chrome.runtime.sendMessage` calls in content.ts go through `safeSendMessage()` which catches "Extension context invalidated" errors silently, preventing crashes after extension reload.
+- **Torrent filtering**: Byte-range responses (status 206, `Content-Range` header) are skipped in the webRequest handler to avoid polluting the video list with P2P chunk noise.
+- **HLS download**: Segments are downloaded in parallel batches of 6, concatenated into a single ArrayBuffer, converted to a Blob, then to a data URL via `blobToDataUrl()` helper, and saved via `chrome.downloads.download`.
+- **Ad categories**: `AD_RULES` replaces flat `AD_SELECTORS` — each selector has a category label. Category counts are tracked and displayed as badges in the popup for visibility into what's being blocked.
