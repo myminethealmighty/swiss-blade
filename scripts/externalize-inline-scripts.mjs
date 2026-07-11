@@ -111,6 +111,7 @@ function removeChromeReservedGeneratedArtifacts() {
   }
 
   rmSync(join(outDir, "_not-found"), { recursive: true, force: true });
+  rmSync(join(outDir, "_metadata"), { recursive: true, force: true });
 }
 
 function renameChromeReservedGeneratedFiles() {
