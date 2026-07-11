@@ -54,4 +54,10 @@ npm run build
 ## Updating Block Rules & Selectors
 
 - **Network Rules**: Edit [public/rules/ads.json](file:///Users/minkhant/Desktop/MKT/swiss-blade/public/rules/ads.json) to add new domains, URL patterns, or filters. Ensure rule IDs are unique.
-- **Cosmetic Selectors**: Edit [extension/content.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/content.ts) to update elements hidden by the extension during page loading or DOM changes.
+- **Cosmetic Selectors**: Edit [extension/content.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/content.ts) to update elements hidden by the extension during page loading or DOM changes. Selectors are organized as `AD_RULES` with category labels (Banner, Google, Iframe, Sponsored, Native).
+
+## Testing New Features
+
+- **Video Detection**: Load a page with video content and verify the floating "Download" button appears and the "Now Playing" card in the popup shows correct details. HLS streams (`.m3u8`) should download and concatenate segments properly.
+- **Screenshots**: Test all three modes — Visible (instant capture), Crop Area (drag-to-select overlay), and Full Page (scroll + stitch). Press Esc to cancel a crop selection.
+- **Ad Blocking**: Enable protection and check the popup for category badge breakdowns (Banner, Google, Iframe, Sponsored, Native).

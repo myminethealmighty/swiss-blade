@@ -1,58 +1,112 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Swiss Blade</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <main class="popup-shell">
-      <section class="hero-panel">
-        <div>
-          <p class="eyebrow">Swiss Blade</p>
-          <h1 id="protectionLabel">Loading</h1>
-        </div>
-        <button aria-label="Toggle ad blocking" class="power-button" id="toggleProtection" type="button">
-          <span id="powerIcon">ON</span>
-        </button>
-      </section>
 
-      <section class="stats-grid">
-        <div class="metric">
-          <span>Blocked today</span>
-          <strong id="blockedToday">0</strong>
-        </div>
-        <div class="metric">
-          <span>Allowlisted</span>
-          <strong id="allowlisted">0</strong>
-        </div>
-      </section>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Swiss Blade</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
 
-      <section class="tool-section">
-        <p class="section-title">Tools</p>
-        <div class="actions three-actions">
-          <button class="secondary-button" id="cropShot" type="button">Screenshot</button>
-          <button class="secondary-button" id="inspectStorage" type="button">Inspect</button>
-          <button class="secondary-button danger-button" id="clearStorage" type="button">Clear All</button>
-        </div>
-      </section>
-
-      <section class="storage-panel" hidden id="storagePanel">
-        <div class="storage-summary" id="storageSummary"></div>
-        <div class="storage-details" hidden id="storageDetails"></div>
-      </section>
-
-      <section class="status-row">
-        <span class="status-dot on" id="statusDot"></span>
-        <p id="statusText">Ready</p>
-      </section>
-
-      <div class="actions">
-        <button class="secondary-button" id="openOptions" type="button">Options</button>
-        <button class="secondary-button" id="resetStats" type="button">Reset</button>
+<body>
+  <main class="popup-shell">
+    <!-- Header -->
+    <section class="hero-panel">
+      <div>
+        <p class="eyebrow">Swiss Blade</p>
+        <h1 id="protectionLabel">Loading</h1>
       </div>
-    </main>
-    <script src="popup.js"></script>
-  </body>
+      <button aria-label="Toggle ad blocking" class="power-button" id="toggleProtection" type="button">
+        <span id="powerIcon">ON</span>
+      </button>
+    </section>
+
+    <!-- Stats row -->
+    <section class="stats-row">
+      <div class="metric">
+        <span>Blocked today</span>
+        <strong id="blockedToday">0</strong>
+        <div class="ad-categories" id="adCategories" hidden></div>
+      </div>
+      <button class="reset-stats-btn" id="resetStats" type="button" title="Reset counter">↻</button>
+    </section>
+
+    <!-- Tools -->
+    <section class="tool-section">
+      <p class="section-title">Tools</p>
+      <div class="dropdown-wrapper">
+        <button class="secondary-button" id="screenshotBtn" type="button">
+          <span class="btn-icon">📷</span> Screenshot <span class="dropdown-arrow">▾</span>
+        </button>
+        <div class="screenshot-dropdown" id="screenshotDropdown" hidden>
+          <button class="dropdown-item" id="cropShot" type="button">
+            <span class="btn-icon">📷</span> Visible
+          </button>
+          <button class="dropdown-item" id="cropScreenshot" type="button">
+            <span class="btn-icon">✂️</span> Crop Area
+          </button>
+          <button class="dropdown-item" id="fullPageShot" type="button">
+            <span class="btn-icon">📄</span> Full Page
+          </button>
+        </div>
+      </div>
+      <button class="secondary-button" id="inspectStorage" type="button" style="margin-top:8px;width:100%">
+        <span class="btn-icon">🔍</span> Inspect
+      </button>
+    </section>
+
+    <!-- Storage panel (toggled by Inspect) -->
+    <section class="storage-panel" hidden id="storagePanel">
+      <div class="sp-header">
+        <p class="section-title" style="margin:0">Storage</p>
+        <button class="clear-all-btn" id="clearStorage" type="button">Clear All</button>
+      </div>
+      <div class="storage-summary" id="storageSummary"></div>
+      <div class="storage-details" hidden id="storageDetails"></div>
+    </section>
+
+    <!-- Video section (always visible) -->
+    <section class="video-section" id="videoSection">
+      <div class="vs-header">
+        <p class="section-title" style="margin:0">Now Playing</p>
+        <div class="vs-header-actions">
+          <button class="vs-btn vs-btn-small" id="videoRefreshBtn" type="button" title="Refresh">↻</button>
+        </div>
+      </div>
+
+      <!-- Active video card -->
+      <div class="vs-active-card" id="videoNowPlaying" hidden>
+        <div class="vs-active-main">
+          <div class="vs-active-icon">▶</div>
+          <div class="vs-active-info">
+            <div class="vs-active-name" id="videoActiveName">Video</div>
+            <div class="vs-active-meta">
+              <span class="vs-active-format" id="videoActiveFormat">MP4</span>
+              <span class="vs-active-sep">·</span>
+              <span class="vs-active-size" id="videoActiveSize">Streaming</span>
+            </div>
+          </div>
+          <button class="vs-download-btn" id="videoStartDownload" type="button">Download</button>
+        </div>
+      </div>
+
+      <div class="vs-empty" id="videoEmpty">
+        <p>No video detected yet. Try playing a video on the page.</p>
+      </div>
+
+      <!-- More videos toggle -->
+      <button class="vs-more-toggle" id="videoMoreToggle" type="button" hidden></button>
+
+      <div class="vs-more-list" id="videoMoreList" hidden></div>
+    </section>
+
+    <!-- Status -->
+    <section class="status-row">
+      <span class="status-dot on" id="statusDot"></span>
+      <p id="statusText">Ready</p>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+
 </html>
