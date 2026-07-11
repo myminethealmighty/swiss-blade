@@ -9,7 +9,7 @@
     "build:extension-scripts": "esbuild extension/background.ts extension/content.ts extension/popup.ts --bundle --format=iife --target=chrome114 --outdir=public",
     "lint": "eslint src extension --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "package:chrome": "npm run build && cd out && zip -r -FS ../swiss-blade-chrome.zip . -x \"*.DS_Store\" -x \"__MACOSX*\""
+    "package:chrome": "npm run build && cd out && zip -r -9 ../swiss-blade-chrome.zip . -x \"*.DS_Store\" -x \"__MACOSX*\" -x \"_metadata/*\" -x \"_next/*\""
   },
   "dependencies": {
     "@types/chrome": "^0.0.268",
