@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented here.
 
-## v0.2.0 - 2026-07-11
+## v1.1.0 - 2026-07-11
 
 ### 🎬 Video Detection & Download
 - Added automatic video detection via `webRequest` network monitoring, page-level fetch/XHR/MediaSource interception, and `<video>` element tracking.

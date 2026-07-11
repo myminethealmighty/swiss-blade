@@ -46,7 +46,7 @@ A single **Screenshot** button with a dropdown menu offering three options:
 ## Installation
 
 ### Chrome Web Store
-*(Coming soon)*
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/swiss-blade/nmblebkhgncabdbnaikjfcddpedebipf)
 
 ### Development Build
 ```bash
