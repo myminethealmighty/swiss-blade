@@ -17,14 +17,14 @@ Report privately by contacting the maintainer through GitHub or another trusted 
 
 ## Secrets
 
-Do not commit or publish local allowlists, site credentials, or extension cookies in test files or pull request snapshots.
+Do not commit or publish site credentials or extension cookies in test files or pull request snapshots.
 
 ## Chrome Extension Safety
 
 Swiss Blade runs under Chrome's Manifest V3 standard, which enforces several security boundaries:
 
 - **No Remote Code**: Swiss Blade compiles all scripts locally. We strictly avoid loading or executing remotely hosted scripts to prevent cross-site scripting (XSS) or remote command execution.
-- **Sanitized Inputs**: Dynamic DOM additions (such as the allowlist editor in the options page) must sanitize inputs to avoid DOM-based XSS attacks.
+- **Sanitized Inputs**: All dynamic DOM additions must sanitize inputs to avoid DOM-based XSS attacks.
 - **Minimal Permissions**: The extension requests only the minimum set of permissions necessary to function (e.g., `declarativeNetRequest`, `storage`, `tabs`, `activeTab`, `cookies`, `downloads`, `scripting`, `webRequest`). Avoid broadening host permissions unless absolutely required.
 
 ## Privacy-First Policy
@@ -33,4 +33,4 @@ To maintain user privacy:
 - **Screenshots**: Screen captures are only taken when the user explicitly clicks the **Screenshot** button and selects an option from the dropdown (Visible / Crop Area / Full Page). Screenshots are downloaded directly to the local machine via Chrome's downloads API. They are never uploaded or transmitted to any external server.
 - **Video Detection**: Network requests are monitored only for content-type and URL patterns to identify video streams. Detected video URLs are displayed in the popup and are never transmitted elsewhere. The page-level interception script (`fetch`, `XHR`, `MediaSource` patches) runs inside the page's main world but only reports video-relevant data back to the extension.
 - **Storage Inspector**: Site storage counts and keys are inspected in-memory and are never stored or sent anywhere.
-- **Settings & Allowlist**: Extension settings and allowlisted domains are saved strictly in the user's Chrome local storage using the `chrome.storage.local` API.
+- **Settings**: Extension settings are saved strictly in the user's Chrome local storage using the `chrome.storage.local` API.

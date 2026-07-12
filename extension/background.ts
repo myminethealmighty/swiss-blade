@@ -52,7 +52,6 @@ type ActiveVideoEntry = {
 type StoredState = {
   enabled: boolean;
   blockedToday: number;
-  allowlist: string[];
   detectedVideos: VideoFile[];
   activeVideos: ActiveVideoEntry[];
 };
@@ -80,12 +79,9 @@ type StorageSnapshot = PageStorageSnapshot & {
 const DEFAULT_STATE: StoredState = {
   enabled: true,
   blockedToday: 0,
-  allowlist: [],
   detectedVideos: [],
   activeVideos: [],
 };
-
-const ALLOWLIST_RULE_START_ID = 10000;
 const pendingCaptures = new Map<number, string>();
 
 const VIDEO_EXTENSIONS = [
@@ -287,7 +283,6 @@ async function readState(): Promise<StoredState> {
   return {
     enabled: Boolean(stored.enabled),
     blockedToday: Number(stored.blockedToday ?? 0),
-    allowlist: Array.isArray(stored.allowlist) ? stored.allowlist : [],
     detectedVideos: Array.isArray(stored.detectedVideos)
       ? stored.detectedVideos
       : [],
@@ -295,46 +290,6 @@ async function readState(): Promise<StoredState> {
       ? stored.activeVideos
       : [],
   };
-}
-
-function normalizeAllowlist(allowlist: string[]) {
-  return allowlist
-    .map((domain) =>
-      domain
-        .trim()
-        .replace(/^www\./, "")
-        .toLowerCase(),
-    )
-    .filter(Boolean);
-}
-
-async function syncAllowlistRules(allowlist: string[]) {
-  const existingRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const oldRuleIds = existingRules
-    .filter((rule) => rule.id >= ALLOWLIST_RULE_START_ID)
-    .map((rule) => rule.id);
-
-  const addRules: chrome.declarativeNetRequest.Rule[] = normalizeAllowlist(
-    allowlist,
-  ).map((domain, index) => ({
-    id: ALLOWLIST_RULE_START_ID + index,
-    priority: 100,
-    action: {
-      type: chrome.declarativeNetRequest.RuleActionType.ALLOW_ALL_REQUESTS,
-    },
-    condition: {
-      requestDomains: [domain],
-      resourceTypes: [
-        chrome.declarativeNetRequest.ResourceType.MAIN_FRAME,
-        chrome.declarativeNetRequest.ResourceType.SUB_FRAME,
-      ],
-    },
-  }));
-
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: oldRuleIds,
-    addRules,
-  });
 }
 
 async function setRulesEnabled(enabled: boolean) {
@@ -352,7 +307,6 @@ async function setState(partial: Partial<StoredState>) {
   const next = { ...(await readState()), ...partial };
   await chrome.storage.local.set(next);
   await setRulesEnabled(next.enabled);
-  await syncAllowlistRules(next.allowlist);
   return next;
 }
 
@@ -765,14 +719,12 @@ chrome.runtime.onInstalled.addListener(async () => {
   const state = await readState();
   await chrome.storage.local.set({ ...DEFAULT_STATE, ...state, detectedVideos: [] });
   await setRulesEnabled(state.enabled);
-  await syncAllowlistRules(state.allowlist);
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   const state = await readState();
   await setState({ detectedVideos: [] });
   await setRulesEnabled(state.enabled);
-  await syncAllowlistRules(state.allowlist);
 });
 
 // Clear video/active for tab when tab is closed
@@ -803,11 +755,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
       }
     })();
   }
-});
-
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !changes.allowlist) return;
-  void syncAllowlistRules(changes.allowlist.newValue ?? []);
 });
 
 // ── Page script that runs in MAIN world to intercept fetch/XHR/MSE ──

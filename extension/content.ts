@@ -473,11 +473,6 @@ function startCosmeticFiltering() {
   });
 }
 
-function isAllowlisted(allowlist: string[]) {
-  const hostname = window.location.hostname.replace(/^www\./, "").toLowerCase();
-  return allowlist.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
-}
-
 function readStorage(storage: Storage) {
   const output: Record<string, string> = {};
 
@@ -813,6 +808,5 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 safeSendMessage({ type: "getState" }).then((state: any) => {
   if (!state) return;
-  if (isAllowlisted(state.allowlist ?? [])) return;
   if (state.enabled !== false) startCosmeticFiltering();
 });

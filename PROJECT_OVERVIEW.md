@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Swiss Blade is an open-source Chrome extension built with TypeScript, Next.js, and Manifest V3. It combines several utilities in one extension:
+Swiss Blade is an open-source Chrome extension built with TypeScript, and Manifest V3. It combines several utilities in one extension:
 
 - **Ad blocking** (network + cosmetic) with category breakdown visibility
 - **Video detection & download** (auto-detect playing videos, HLS stream download, floating download button)
@@ -27,8 +27,7 @@ extension/
 
 src/
   app/
-    options/     Next.js allowlist settings page (page.tsx)
-    globals.css   CSS variables and options page design system
+    globals.css   CSS variables design system
 
 scripts/
   externalize-inline-scripts.mjs  Post-build sanitizer for Chrome Web Store CSP compliance
@@ -43,7 +42,6 @@ scripts/
 2. **Ad Blocking (Layer 1 — Network)**:
    - When enabled, the service worker updates declarative rulesets via `chrome.declarativeNetRequest`.
    - Chrome intercepts matching ad/tracker requests defined in `public/rules/ads.json`.
-   - `extension/background.ts` manages dynamic allowlist rules for user-trusted domains.
 
 3. **Ad Blocking (Layer 2 — Cosmetic)**:
    - `extension/content.ts` injects CSS to hide ad elements on all pages.
@@ -78,16 +76,17 @@ scripts/
 - [extension/background.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/background.ts) — Service worker: ad rules, video webRequest detection, screenshot capture/stitch/crop, HLS download, cookie/storage APIs.
 - [extension/content.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/content.ts) — Content script: cosmetic ad hiding with categories, DOM storage, video element tracking, floating download button, page script injection coordinator, screenshot crop overlay.
 - [extension/popup.ts](file:///Users/minkhant/Desktop/MKT/swiss-blade/extension/popup.ts) — Popup controller: ad stats, storage inspector, video list, screenshot dropdown, event handling.
-- [src/app/options/page.tsx](file:///Users/minkhant/Desktop/MKT/swiss-blade/src/app/options/page.tsx) — Options app for managing allowlisted domains.
 
 ## Extension Setup
 
 Chrome loads the built static assets from:
+
 ```text
 /Users/minkhant/Desktop/MKT/swiss-blade/out
 ```
 
 ### Loading the Extension in Chrome:
+
 1. Open `chrome://extensions`.
 2. Enable **Developer mode** toggle.
 3. Click **Load unpacked**.
@@ -99,10 +98,10 @@ When editing code, re-run `npm run build` and reload the extension on the Chrome
 
 ```bash
 npm install                     # Install dependencies
-npm run dev                     # Start Next.js dev server (for options page testing)
+npm run dev                     # Start dev server
 npm run typecheck               # Check TypeScript errors
 npm run lint                    # Run ESLint checks
-npm run build                   # Compile extension + build Next.js pages + externalizer
+npm run build                   # Compile extension + build pages + externalizer
 npm run package:chrome          # Compress out/ into swiss-blade-chrome.zip
 ```
 
