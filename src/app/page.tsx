@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 type ShieldState = {
   enabled: boolean;
   blockedToday: number;
-  allowlist: string[];
 };
 
 type StorageSnapshot = {
@@ -22,7 +21,6 @@ type StorageSnapshot = {
 const DEFAULT_STATE: ShieldState = {
   enabled: true,
   blockedToday: 0,
-  allowlist: []
 };
 
 function isChromeExtensionPage() {
@@ -35,7 +33,6 @@ async function readStoredState(): Promise<ShieldState> {
       resolve({
         enabled: Boolean(stored.enabled),
         blockedToday: Number(stored.blockedToday ?? 0),
-        allowlist: Array.isArray(stored.allowlist) ? stored.allowlist : []
       });
     });
   });
@@ -130,7 +127,6 @@ export default function PopupPage() {
           ...currentState,
           enabled: changes.enabled ? Boolean(changes.enabled.newValue) : currentState.enabled,
           blockedToday: changes.blockedToday ? Number(changes.blockedToday.newValue ?? 0) : currentState.blockedToday,
-          allowlist: changes.allowlist && Array.isArray(changes.allowlist.newValue) ? changes.allowlist.newValue : currentState.allowlist
         };
         setStatus(nextState.enabled ? "Protection active" : "Protection paused");
         return nextState;
@@ -232,11 +228,6 @@ export default function PopupPage() {
     }
   }
 
-  function openOptions() {
-    if (!isExtension) return;
-    chrome.runtime.openOptionsPage();
-  }
-
   return (
     <main className="popup-shell">
       <section className="hero-panel">
@@ -259,10 +250,6 @@ export default function PopupPage() {
         <div className="metric">
           <span>Blocked today</span>
           <strong>{state.blockedToday}</strong>
-        </div>
-        <div className="metric">
-          <span>Allowlisted</span>
-          <strong>{state.allowlist.length}</strong>
         </div>
       </section>
 
@@ -334,9 +321,6 @@ export default function PopupPage() {
       </section>
 
       <div className="actions">
-        <button className="secondary-button" disabled={!isExtension} onClick={openOptions} type="button">
-          Options
-        </button>
         <button className="secondary-button" disabled={!isExtension} onClick={resetStats} type="button">
           Reset
         </button>
