@@ -23,8 +23,6 @@ npm run build
    - Click the **Load unpacked** button.
    - Select the `out` directory created in the root of this project.
 
-5. Test the options page locally by running the Next.js development server:
-
 ```bash
 npm run dev
 ```
@@ -40,7 +38,7 @@ npm run typecheck
 # Validate linting compliance
 npm run lint
 
-# Compile extension scripts and Next.js static pages
+# Compile extension scripts and static pages
 npm run build
 ```
 
@@ -48,8 +46,8 @@ npm run build
 
 - **Keep changes focused**: Make small, thematic pull requests instead of large multi-feature refactors.
 - **Test locally**: Always load the updated unpacked extension in Chrome from `out` and confirm the functionality before submitting.
-- **UI Changes**: If you are modifying the popup HTML/CSS or options page, please include screenshots or screen recordings showing the changes.
-- **No Private Data**: Do not commit real passwords, domain lists, or allowlists containing private information.
+- **UI Changes**: If you are modifying the popup HTML/CSS page, please include screenshots or screen recordings showing the changes.
+- **No Private Data**: Do not commit real passwords or other private information.
 
 ## Updating Block Rules & Selectors
 
